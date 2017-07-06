@@ -20,6 +20,7 @@ Header file for main.c.
 /***********************************************************************************************************************
 * Constant Definitions
 ***********************************************************************************************************************/
+#define MAX_DRINKS (u8)0x0A
 /* G_u32ApplicationFlags definitions are in configuration.h */
 
 /* G_u32SystemFlags */
@@ -36,12 +37,13 @@ Header file for main.c.
 #define _SYSTEM_INITIALIZING            (u32)0x80000000        /* Set when system is in initialization phase */
 
 #define  SYSTEM_CLOCK_ALL_FLAGS         (u32)0x0000001F        /* Value to set all System Clock flags */
-
+typedef enum {EMPTY1, BEER, SHOOTER, WINE, HIBALL} DrinkType;
 
 /**********************************************************************************************************************
 Function Declarations
 **********************************************************************************************************************/
 void Timer1CallBack(void);
-
+void Clear_Bit(void);
+void Set_Bit(void);
 
 #endif /* __MAIN_H */

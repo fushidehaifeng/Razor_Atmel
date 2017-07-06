@@ -15,6 +15,11 @@ All Global variable names shall start with "G_"
 volatile u32 G_u32SystemFlags = 0;                     /* Global system flags */
 volatile u32 G_u32ApplicationFlags = 0;                /* Global applications flags: set when application is successfully initialized */
 u32 u32Useless;
+u8 u8DataCheckBit;
+u16 u16NumBit=0X0000;
+u16 u16NumClearBit=0XFFFF;
+
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* External global variables defined in other files (must indicate which file they are defined in) */
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
@@ -25,6 +30,15 @@ extern volatile u32 G_u32SystemTime1s;                 /* From board-specific so
 Global variable definitions with scope limited to this local application.
 Variable names shall start with "Main_" and be declared as static.
 ***********************************************************************************************************************/
+
+void Clear_Bit(void)
+{ u16NumClearBit&=~BIT0;
+}
+
+void Set_Bit(void)
+{ u16NumBit|=BIT0;
+}
+
 
 
 /***********************************************************************************************************************
@@ -40,9 +54,13 @@ the 1ms period.
 ***********************************************************************************************************************/
 
 void main(void)
-{
+{ Clear_Bit();
+  Set_Bit();
+  u8 au8Array1[] = {'H','E','L','L','O'};
+  u8 au8Array2[] = "HELLO";
+  u8 au8Array3[] = {1,2,3,76,79};
+  u8 au8Array4[] = {72,69,76,76,79,0};
   G_u32SystemFlags |= _SYSTEM_INITIALIZING;
-  u32Useless=0;
   /* Low level initialization */
   WatchDogSetup(); /* During development, does not reset processor if timeout */
   GpioSetup();
@@ -84,7 +102,6 @@ void main(void)
   while(1)
   {
     WATCHDOG_BONE();
-    u32Useless++;
     /* Drivers */
     LedUpdate();
     ButtonRunActiveState();
