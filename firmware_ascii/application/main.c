@@ -54,12 +54,41 @@ the 1ms period.
 ***********************************************************************************************************************/
 
 void main(void)
-{ Clear_Bit();
+{ 
+  typedef struct
+{
+  u8 u8ServerNumber;                    /* Unique token for this item */
+  DrinkType asServingTray[MAX_DRINKS];  /* Data payload array */
+  void* psNextServer;                   /* Pointer to next ServerType*/
+} ServerType;
+  
+  u8 u8CurrentServer;
+  ServerType sServer1;
+  ServerType* psServerParser;
+
+  psServerParser = &sServer1;
+  sServer1.u8ServerNumber = 18;
+  u8CurrentServer = psServerParser->u8ServerNumber;
+
+  Clear_Bit();
   Set_Bit();
-  u8 au8Array1[] = {'H','E','L','L','O'};
-  u8 au8Array2[] = "HELLO";
-  u8 au8Array3[] = {1,2,3,76,79};
-  u8 au8Array4[] = {72,69,76,76,79,0};
+  u8 u8Test = 0xA5;
+  u8* pu8Example;
+  u32 u32Test = 0x0000ffff;
+  u32* pu32Example;
+
+/* Load the addresses into our pointer variables */
+  pu8Example = &u8Test;
+  pu32Example = &u32Test;
+
+/* Access the variables via the pointers (two different ways) */
+  *pu8Example += 1;
+  (*pu32Example)++;
+
+/* Move the pointers (watch out for the second one!) */
+  pu8Example++;
+  *pu32Example++;
+
   G_u32SystemFlags |= _SYSTEM_INITIALIZING;
   /* Low level initialization */
   WatchDogSetup(); /* During development, does not reset processor if timeout */
@@ -121,11 +150,10 @@ void main(void)
     UserApp1RunActiveState();
     UserApp2RunActiveState();
     UserApp3RunActiveState();
-    
     /* System sleep*/
-    HEARTBEAT_OFF();
+    //HEARTBEAT_OFF();
     SystemSleep();
-    HEARTBEAT_ON();
+    //HEARTBEAT_ON();
     
   } /* end while(1) main super loop */
   

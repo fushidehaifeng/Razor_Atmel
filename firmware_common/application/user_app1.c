@@ -132,11 +132,81 @@ State Machine Function Definitions
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
+
 static void UserApp1SM_Idle(void)
 {
+  static bool bLightOn=FALSE;
+  static u32 u32Count=0;
+  static u32 u32Time=0;
+  static u32 u32CounterLimitMs=512;
+  static u16 u16Count=0;
+  u32Count++;
+  u32Time++;
+  if(u32Count==u32CounterLimitMs)
+  { u32Count=0;
+    if(bLightOn)
+    HEARTBEAT_OFF();
+    else HEARTBEAT_ON();
+    bLightOn=!bLightOn;
+  }
+  if(u32Time == Time_Max)
+  {
+    u32Time=0;
+    u16Count++;
+    u32Count=0;
+    if(u16Count<10)
+    u32CounterLimitMs=u32CounterLimitMs/2;
+    else u32CounterLimitMs=u32CounterLimitMs*2;
+    if(u16Count==19) u16Count=0;
+  }
 
-} /* end UserApp1SM_Idle() */
-    
+}  
+
+/*
+static void UserApp1SM_Idle(void)
+{
+  static bool bLightOn=FALSE;
+  static u32 u32Count=0;
+  static u32 u32Time=0;
+  static u32 u32Num=0;
+  static u32 u32CounterLimitMsOn=1;
+  static u32 u32CounterLimitMsOff=51;
+  u32Count++;
+  u32Time++;
+  if(bLightOn)
+  {    if(u32Count==u32CounterLimitMsOn)
+  { 
+    u32Count=0;
+    HEARTBEAT_OFF();
+    bLightOn=!bLightOn;
+  }}
+  else if(u32Count==u32CounterLimitMsOff)
+  {
+    u32Count=0;
+    HEARTBEAT_ON(); 
+    bLightOn=!bLightOn;
+  }
+       
+  if(u32Time==104)
+  {
+    u32Time=0;
+    u32Num++;
+    if(u32Num<11)
+    {
+         u32CounterLimitMsOn+=5;
+         u32CounterLimitMsOff-=5;
+  }
+  else if(u32Num<21)
+  {   
+         u32CounterLimitMsOn-=5;
+         u32CounterLimitMsOff+=5;
+  }
+  else {
+         u32Num=0;
+  }}
+}
+*/
+
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */

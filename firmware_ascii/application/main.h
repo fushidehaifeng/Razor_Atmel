@@ -45,5 +45,4 @@ Function Declarations
 void Timer1CallBack(void);
 void Clear_Bit(void);
 void Set_Bit(void);
-
 #endif /* __MAIN_H */
