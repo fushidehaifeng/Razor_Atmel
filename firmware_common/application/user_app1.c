@@ -132,87 +132,105 @@ State Machine Function Definitions
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
-
 static void UserApp1SM_Idle(void)
 {
-  static bool bLightOn=FALSE;
-  static u32 u32Count=0;
-  static u32 u32Time=0;
-  static u32 u32CounterLimitMs=512;
-  static u16 u16Count=0;
-  u32Count++;
-  u32Time++;
-  if(u32Count==u32CounterLimitMs)
-  { u32Count=0;
-    if(bLightOn)
-    HEARTBEAT_OFF();
-    else HEARTBEAT_ON();
-    bLightOn=!bLightOn;
-  }
-  if(u32Time == Time_Max)
-  {
-    u32Time=0;
-    u16Count++;
-    u32Count=0;
-    if(u16Count<10)
-    u32CounterLimitMs=u32CounterLimitMs/2;
-    else u32CounterLimitMs=u32CounterLimitMs*2;
-    if(u16Count==19) u16Count=0;
-  }
+    static u8  au8PassWord[6]="111111";//Initialize 
+    static u8  au8InPut[6]="000000";
+    static u8   u8Num=0;
+    static bool bOk=TRUE,bOk1=TRUE;
+    static u32  u32Counter=0;
 
-}  
-
-/*
-static void UserApp1SM_Idle(void)
-{
-  static bool bLightOn=FALSE;
-  static u32 u32Count=0;
-  static u32 u32Time=0;
-  static u32 u32Num=0;
-  static u32 u32CounterLimitMsOn=1;
-  static u32 u32CounterLimitMsOff=51;
-  u32Count++;
-  u32Time++;
-  if(bLightOn)
-  {    if(u32Count==u32CounterLimitMsOn)
-  { 
-    u32Count=0;
-    HEARTBEAT_OFF();
-    bLightOn=!bLightOn;
-  }}
-  else if(u32Count==u32CounterLimitMsOff)
-  {
-    u32Count=0;
-    HEARTBEAT_ON(); 
-    bLightOn=!bLightOn;
-  }
-       
-  if(u32Time==104)
-  {
-    u32Time=0;
-    u32Num++;
-    if(u32Num<11)
+        
+    if(bOk)//turn on LED_RED just one time
     {
-         u32CounterLimitMsOn+=5;
-         u32CounterLimitMsOff-=5;
-  }
-  else if(u32Num<21)
-  {   
-         u32CounterLimitMsOn-=5;
-         u32CounterLimitMsOff+=5;
-  }
-  else {
-         u32Num=0;
-  }}
+        LedOn(RED);
+        bOk=!bOk;//Switch 
+    }
+    
+    if(IsButtonHeld((BUTTON3),1000))//Pressed for a second
+    {
+            bOk1=FALSE;
+            
+            LedBlink(RED,LED_2HZ);
+            LedBlink(GREEN,LED_2HZ); 
+    }
+    
+    if(!bOk1)//chang the password
+    {
+          if(WasButtonPressed(BUTTON0))
+          {
+              au8PassWord[u8Num++]='1';
+              LedOn(WHITE);//the white led makes sure that data has been entered
+              ButtonAcknowledge(BUTTON0);
+          }
+          if(WasButtonPressed(BUTTON1))
+          {
+              au8PassWord[u8Num++]='2';
+              LedOn(WHITE);
+              ButtonAcknowledge(BUTTON1);
+          }
+          if(WasButtonPressed(BUTTON2))
+          {
+              au8PassWord[u8Num++]='3';
+              LedOn(WHITE);
+              ButtonAcknowledge(BUTTON2);
+          }
+          
+          LedOff(WHITE);
+          
+          if(u8Num==6)//Initialize 
+          {
+            bOk=!bOk;
+            bOk1=!bOk1;
+            LedOff(RED);
+            LedOff(GREEN);
+            u8Num=0;
+          }
+    }
+    else
+    {    
+            LedOff(WHITE);
+            
+            
+            if(WasButtonPressed(BUTTON0))//input your number
+            {
+                au8InPut[u8Num++]='1';
+                ButtonAcknowledge(BUTTON0);
+                LedOn(WHITE);
+            }
+            if(WasButtonPressed(BUTTON1))
+            {
+                au8InPut[u8Num++]='2';
+                ButtonAcknowledge(BUTTON1);
+                LedOn(WHITE);
+            }
+            if(WasButtonPressed(BUTTON2))
+            {
+                au8InPut[u8Num++]='3';
+                ButtonAcknowledge(BUTTON2);
+                LedOn(WHITE);
+            }
+            if(WasButtonPressed(BUTTON3))//compare to the the password
+              {
+                ButtonAcknowledge(BUTTON3);
+                
+                if(strcmp(au8PassWord,au8InPut)==0)
+                {
+                  LedBlink(GREEN,LED_2HZ);
+                }
+                else
+                {
+                  LedBlink(RED,LED_2HZ);
+                }
+              }
+    }
 }
-*/
-
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
 static void UserApp1SM_Error(void)          
 {
-  
+
 } /* end UserApp1SM_Error() */
 
 
