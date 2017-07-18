@@ -51,6 +51,9 @@ extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
 
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
+extern u8 G_au8DebugScanfBuffer[];                     /* From debug.c */
+extern u8 G_u8DebugScanfCharCount;                     /* From debug.c */
+
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
 Variable names shall start with "UserApp1_" and be declared as static.
@@ -58,6 +61,7 @@ Variable names shall start with "UserApp1_" and be declared as static.
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
 
+static u8 UserApp_CursorPosition;
 
 /**********************************************************************************************************************
 Function Definitions
@@ -85,7 +89,16 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
- 
+  LCDCommand(LCD_CLEAR_CMD);
+  UserApp_CursorPosition = LINE1_END_ADDR+1;
+  LedOff(WHITE);
+  LedOff(PURPLE);
+  LedOff(BLUE);
+  LedOff(CYAN);
+  LedOff(GREEN);
+  LedOff(YELLOW);
+  LedOff(ORANGE);
+  LedOff(RED);
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -132,108 +145,75 @@ State Machine Function Definitions
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
+
 static void UserApp1SM_Idle(void)
 {
-    static u8  au8PassWord[6]="111111";//Initialize 
-    static u8  au8InPut[6]="000000";
-    static u8   u8Num=0;
-    static bool bOk=TRUE,bOk1=TRUE;
-    static u32  u32Counter=0;
+	static u8  u8Input[255];
+	static u32 u32Count=0;
+	static u8  u8Number=0;
+	static u8  u8No=19;
+	static u8  u8CharNumber=0;
+	static bool bOk=FALSE;
 
-        
-    if(bOk)//turn on LED_RED just one time
-    {
-        LedOn(RED);
-        bOk=!bOk;//Switch 
-    }
-    
-    if(IsButtonHeld((BUTTON3),1000))//Pressed for a second
-    {
-            bOk1=FALSE;
-            
-            LedBlink(RED,LED_2HZ);
-            LedBlink(GREEN,LED_2HZ); 
-    }
-    
-    if(!bOk1)//chang the password
-    {
-          if(WasButtonPressed(BUTTON0))
-          {
-              au8PassWord[u8Num++]='1';
-              LedOn(WHITE);//the white led makes sure that data has been entered
-              ButtonAcknowledge(BUTTON0);
-          }
-          if(WasButtonPressed(BUTTON1))
-          {
-              au8PassWord[u8Num++]='2';
-              LedOn(WHITE);
-              ButtonAcknowledge(BUTTON1);
-          }
-          if(WasButtonPressed(BUTTON2))
-          {
-              au8PassWord[u8Num++]='3';
-              LedOn(WHITE);
-              ButtonAcknowledge(BUTTON2);
-          }
-          
-          LedOff(WHITE);
-          
-          if(u8Num==6)//Initialize 
-          {
-            bOk=!bOk;
-            bOk1=!bOk1;
-            LedOff(RED);
-            LedOff(GREEN);
-            u8Num=0;
-          }
-    }
-    else
-    {    
-            LedOff(WHITE);
-            
-            
-            if(WasButtonPressed(BUTTON0))//input your number
-            {
-                au8InPut[u8Num++]='1';
-                ButtonAcknowledge(BUTTON0);
-                LedOn(WHITE);
-            }
-            if(WasButtonPressed(BUTTON1))
-            {
-                au8InPut[u8Num++]='2';
-                ButtonAcknowledge(BUTTON1);
-                LedOn(WHITE);
-            }
-            if(WasButtonPressed(BUTTON2))
-            {
-                au8InPut[u8Num++]='3';
-                ButtonAcknowledge(BUTTON2);
-                LedOn(WHITE);
-            }
-            if(WasButtonPressed(BUTTON3))//compare to the the password
-              {
-                ButtonAcknowledge(BUTTON3);
-                
-                if(strcmp(au8PassWord,au8InPut)==0)
-                {
-                  LedBlink(GREEN,LED_2HZ);
-                }
-                else
-                {
-                  LedBlink(RED,LED_2HZ);
-                }
-              }
-    }
+	if(WasButtonPressed(BUTTON0))//comfirm to input the data
+	{
+		ButtonAcknowledge(BUTTON0);
+		u8Number=DebugScanf(u8Input);
+		bOk=TRUE;
+		u32Count=0;
+	}
+	
+	u32Count++;
+	
+	if(bOk)
+	{
+		if(u8Number<=40)
+		{
+		  LCDMessage(LINE1_START_ADDR,u8Input);
+		  LCDMessage(LINE2_START_ADDR,&u8Input[20]);
+		  bOk=FALSE;
+		}
+		else if(u32Count==400)//400ms
+		{
+		  u32Count=0;
+		  
+		  if(UserApp_CursorPosition>0)
+		  {
+			LCDMessage(--UserApp_CursorPosition,u8Input);
+			LCDClearChars(LINE2_START_ADDR,20);
+			
+	    	if(u8No>0)
+			{
+			  LCDClearChars(LINE1_START_ADDR,--u8No);
+			}
+			
+		  }
+		  else
+		  {
+			LCDMessage(UserApp_CursorPosition,&u8Input[++u8CharNumber]);
+			LCDClearChars(LINE2_START_ADDR,20);
+
+			if((u8Number-u8CharNumber)<20)
+			{
+			  LCDClearChars(u8Number-u8CharNumber,1);
+			}
+		  }
+		  
+		  if(u8CharNumber==u8Number)//end
+		  {
+			UserApp_CursorPosition=LINE1_END_ADDR+1;
+			u8CharNumber=0;
+			u8No=19;
+		  }
+		  
+	 	}
+	}
 }
 
-/*-------------------------------------------------------------------------------------------------------------------*/
-/* Handle an error */
-static void UserApp1SM_Error(void)          
+static void UserApp1SM_Error()
 {
 
-} /* end UserApp1SM_Error() */
-
-
+}/* end UserApp1SM_Error() */
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* End of File                                                                                                        */

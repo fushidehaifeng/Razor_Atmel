@@ -322,7 +322,7 @@ Promises:
     and then latched to their respective update registers (CPRDUPDR, CDTYUPDR)
   - If the channel is not valid, nothing happens
 */
-void PWMAudioSetFrequency(u32 u32Channel_, u16 u16Frequency_)
+void PWMAudioSetFrequency(u32 u32Channel_, u16  u16Frequency_)
 {
   u32 u32ChannelPeriod;
   
