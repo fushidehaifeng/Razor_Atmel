@@ -61,7 +61,6 @@ Variable names shall start with "UserApp1_" and be declared as static.
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
 
-static u8 UserApp_CursorPosition;
 
 /**********************************************************************************************************************
 Function Definitions
@@ -90,7 +89,14 @@ Promises:
 void UserApp1Initialize(void)
 {
   LCDCommand(LCD_CLEAR_CMD);
-  UserApp_CursorPosition = LINE1_END_ADDR+1;
+  LCDMessage(LINE1_START_ADDR+1,"0");
+  LCDMessage(LINE1_START_ADDR+3,"0");
+  LCDMessage(LINE1_START_ADDR+6,"0");
+  LCDMessage(LINE1_START_ADDR+8,"0");
+  LCDMessage(LINE1_START_ADDR+11,"0");
+  LCDMessage(LINE1_START_ADDR+13,"0");
+  LCDMessage(LINE1_START_ADDR+16,"0");
+  LCDMessage(LINE1_START_ADDR+18,"0");
   LedOff(WHITE);
   LedOff(PURPLE);
   LedOff(BLUE);
@@ -145,70 +151,137 @@ State Machine Function Definitions
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
-
 static void UserApp1SM_Idle(void)
 {
-	static u8  u8Input[255];
-	static u32 u32Count=0;
-	static u8  u8Number=0;
-	static u8  u8No=19;
-	static u8  u8CharNumber=0;
-	static bool bOk=FALSE;
+  static u32 u32TimeCounter=0;
+  static u8  u8TimeMessage[5];
+  static u16 u16Counter=0;
+  static u8 u8ColorType=7;
+  static LedRateType DutyCycle=LED_PWM_0;
+  static LedCommandType aeDemoList[]=  {
+											{WHITE,0,TRUE,LED_PWM_100},
+											{WHITE,0,FALSE,LED_PWM_0},
+											{PURPLE,0,TRUE,LED_PWM_100},
+											{PURPLE,0,FALSE,LED_PWM_0},
+											{BLUE,0,TRUE,LED_PWM_100},
+											{BLUE,0,FALSE,LED_PWM_0},
+											{CYAN,0,TRUE,LED_PWM_100},
+											{CYAN,0,FALSE,LED_PWM_0},
+											{GREEN,3000,TRUE,LED_PWM_100},
+											{GREEN,9000,FALSE,LED_PWM_0},
+											{YELLOW,0,TRUE,LED_PWM_100},
+											{YELLOW,0,FALSE,LED_PWM_0},
+											{ORANGE,0,TRUE,LED_PWM_100},
+											{ORANGE,0,FALSE,LED_PWM_0},
+											{RED,1000,TRUE,LED_PWM_100},
+											{RED,4000,FALSE,LED_PWM_0}
+  										};
+  
+  static u8 au8LCDList[]={1,1,3,3,6,6,8,8,11,11,13,13,16,16,18,18};
+  
+  u32TimeCounter++;
+  u16Counter++;
+   
+  if(u16Counter==100)//every 100ms change the LCD_light
+  {
+      u16Counter=0;
+      switch(u8ColorType)
+      {
+		  case 1:
+				LedPWM(LCD_RED,LED_PWM_100);
+				LedPWM(LCD_GREEN,DutyCycle);
+				LedPWM(LCD_BLUE,LED_PWM_0);
+				DutyCycle++;
+				break;
+		  case 2:
+				LedPWM(LCD_GREEN,LED_PWM_100);
+				LedPWM(LCD_RED,DutyCycle);
+				LedPWM(LCD_BLUE,LED_PWM_0);
+				DutyCycle--;
+				break;
+		  case 3:
+				LedPWM(LCD_RED,LED_PWM_0);
+				LedPWM(LCD_GREEN,LED_PWM_100);
+				LedPWM(LCD_BLUE,DutyCycle);
+				DutyCycle++;
+				break;
+		  case 4:
+				LedPWM(LCD_RED,LED_PWM_0);
+				LedPWM(LCD_BLUE,LED_PWM_100);
+				LedPWM(LCD_GREEN,DutyCycle);
+				DutyCycle--;
+				break;
+		  case 5:
+				LedPWM(LCD_GREEN,LED_PWM_0);
+				LedPWM(LCD_BLUE,LED_PWM_100);
+				LedPWM(LCD_RED,DutyCycle);
+				DutyCycle++;
+				break;
+		  case 6:
+				LedPWM(LCD_GREEN,LED_PWM_0);
+				LedPWM(LCD_RED,LED_PWM_100);
+				LedPWM(LCD_BLUE,DutyCycle);
+				DutyCycle--;
+				break;
+		  case 7:
+				u8ColorType=0;
+				break;
+		  default:
+				break;
+      }
+      
+      
+      if((DutyCycle==LED_PWM_100)||(DutyCycle==LED_PWM_0))
+      {
+          u8ColorType++;
+      }
+  }
 
-	if(WasButtonPressed(BUTTON0))//comfirm to input the data
+  if(!(u32TimeCounter%500))//Converts Numbers to characters
+  {
+	u8TimeMessage[0]=u32TimeCounter/10000;
+	u8TimeMessage[1]=(u32TimeCounter%10000)/1000+'0';
+	u8TimeMessage[2]=(u32TimeCounter%1000)/100+'0';
+	u8TimeMessage[3]=(u32TimeCounter%100)/10+'0';
+	u8TimeMessage[4]=u32TimeCounter%10+'0';
+	
+	if(u8TimeMessage[0])
 	{
-		ButtonAcknowledge(BUTTON0);
-		u8Number=DebugScanf(u8Input);
-		bOk=TRUE;
-		u32Count=0;
+		u8TimeMessage[1]=9+'0';
+		u8TimeMessage[2]=9+'0';
+		u8TimeMessage[3]=9+'0';
+		u8TimeMessage[4]=9+'0';
 	}
 	
-	u32Count++;
-	
-	if(bOk)
-	{
-		if(u8Number<=40)
-		{
-		  LCDMessage(LINE1_START_ADDR,u8Input);
-		  LCDMessage(LINE2_START_ADDR,&u8Input[20]);
-		  bOk=FALSE;
-		}
-		else if(u32Count==400)//400ms
-		{
-		  u32Count=0;
-		  
-		  if(UserApp_CursorPosition>0)
-		  {
-			LCDMessage(--UserApp_CursorPosition,u8Input);
-			LCDClearChars(LINE2_START_ADDR,20);
-			
-	    	if(u8No>0)
-			{
-			  LCDClearChars(LINE1_START_ADDR,--u8No);
-			}
-			
-		  }
-		  else
-		  {
-			LCDMessage(UserApp_CursorPosition,&u8Input[++u8CharNumber]);
-			LCDClearChars(LINE2_START_ADDR,20);
+	LCDMessage(LINE2_START_ADDR+8,&u8TimeMessage[1]);//show the timecounter on the LCD_LINE2
+	LCDClearChars(LINE2_START_ADDR+12,16);
+  }//end show timecounter
 
-			if((u8Number-u8CharNumber)<20)
-			{
-			  LCDClearChars(u8Number-u8CharNumber,1);
-			}
-		  }
-		  
-		  if(u8CharNumber==u8Number)//end
-		  {
-			UserApp_CursorPosition=LINE1_END_ADDR+1;
-			u8CharNumber=0;
-			u8No=19;
-		  }
-		  
-	 	}
+  for(u8 i=0;i<16;i++)//Change the state of the LED
+  {
+	
+	if(u32TimeCounter == aeDemoList[i].u32Time)
+	{
+	  LedPWM(aeDemoList[i].eLED,aeDemoList[i].eCurrentRate);
+	  
+	  if(aeDemoList[i].bOn == TRUE)
+	  {
+	    LCDMessage(LINE1_START_ADDR+au8LCDList[i],"1");
+	  }
+	  else
+	  {
+		LCDMessage(LINE1_START_ADDR+au8LCDList[i],"0");
+	  }
 	}
+  }
+  
+  if(u32TimeCounter == 2000)//End of cycle
+  {
+	u32TimeCounter=0;
+  }
 }
+
+
 
 static void UserApp1SM_Error()
 {
