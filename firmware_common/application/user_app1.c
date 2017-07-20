@@ -174,7 +174,7 @@ static void UserApp1SM_Idle(void)
 											{ORANGE,0,TRUE,LED_PWM_100},
 											{ORANGE,0,FALSE,LED_PWM_0},
 											{RED,1000,TRUE,LED_PWM_100},
-											{RED,4000,FALSE,LED_PWM_0}
+											{RED,6000,FALSE,LED_PWM_0}
   										};
   
   static u8 au8LCDList[]={1,1,3,3,6,6,8,8,11,11,13,13,16,16,18,18};
@@ -275,7 +275,7 @@ static void UserApp1SM_Idle(void)
 	}
   }
   
-  if(u32TimeCounter == 2000)//End of cycle
+  if(u32TimeCounter == 10000)//End of cycle
   {
 	u32TimeCounter=0;
   }
