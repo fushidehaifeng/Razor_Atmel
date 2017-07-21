@@ -143,6 +143,61 @@ void UserApp1RunActiveState(void)
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
+static bool CheckCMDString(u8* pu8CMDToCheck)
+{
+  u8* pu8Parser;
+  u8  u8StartTime=0;
+  u8  u8EndTime=0;
+  pu8Parser = pu8CMDToCheck;
+  u8 au8ValidLed[]={'w','W','p','P','b','B','g','G','y','Y','o','O','r','R','c','C'};
+  
+  for(u8 i=0;i<sizeof(au8ValidLed);i++)
+  {
+	if(*pu8Parser == au8ValidLed[i])
+	{
+	  pu8Parser++;
+	
+	  if(*pu8Parser == '-')
+	  {
+	    pu8Parser++;
+	  
+	    for( ;*pu8Parser!='-';*pu8Parser++)
+	    {
+		  if(*pu8Parser>='0'&&*pu8Parser<='9')
+	     {
+		   u8StartTime++;
+		
+		   if(u8StartTime>4||!u8StartTime)
+		   {
+		     return FALSE;//starttime too long or no number
+	   	   }
+	     }
+	    }
+	  
+	    pu8Parser++;
+	  
+	    for( ;*pu8Parser!=0x0d;*pu8Parser++)
+	    {
+	  	  if(*pu8Parser>='0'&&*pu8Parser<='9')
+	      {
+		    u8EndTime++;
+		
+		    if(u8EndTime>4||!u8EndTime)
+		    {
+		      return FALSE;//endtime too long or no number
+		    }
+	      }
+	    }
+		return TRUE;
+	  }
+	  else//if first '-' is not exit or other invalid input
+	  {
+	    return FALSE;
+	  }
+	}
+  }
+  return FALSE;//Color number is invalid
+}
 
 
 /**********************************************************************************************************************
@@ -178,15 +233,58 @@ static void UserApp1SM_Idle(void)
   										};
   
   static u8 au8LCDList[]={1,1,3,3,6,6,8,8,11,11,13,13,16,16,18,18};
+  static u8 au8Command[1];
+  static u8 u8Type=0;
+  static u8 u8InputBuffer[12];
+  static Command CommandType=None;
+
   
-  u32TimeCounter++;
-  u16Counter++;
-   
-  if(u16Counter==100)//every 100ms change the LCD_light
+  DebugScanf(au8Command);
+  
+  if(au8Command[0] == '2')
   {
-      u16Counter=0;
-      switch(u8ColorType)
-      {
+	u8Type=2;
+  }
+  
+  if(au8Command[0] == '2')
+  {
+	u8Type=1;
+  }
+  
+  if(WasButtonPressed(BUTTON0)&&u8Type==2)
+  {
+	CommandType=Show_Demo_List;
+	ButtonAcknowledge(BUTTON0);
+  }
+  
+  if(WasButtonPressed(BUTTON1)&&u8Type==2)
+  {
+	CommandType=Show_User_List;
+	ButtonAcknowledge(BUTTON1);
+  }
+  
+  if(WasButtonPressed(BUTTON2)&&u8Type==2)
+  {
+	CommandType=Stop;
+	ButtonAcknowledge(BUTTON2);
+  }
+  
+  if(WasButtonPressed(BUTTON3)&&u8Type==2&&CommandType==Stop)
+  {
+	CommandType=Continue;
+	ButtonAcknowledge(BUTTON3);
+  }
+  
+  if(CommandType == Show_Demo_List)
+  {
+	u32TimeCounter++;
+	u16Counter++;
+  
+	if(u16Counter==100)//every 100ms change the LCD_light
+	{
+	  u16Counter=0;
+	  switch(u8ColorType)
+	  {
 		  case 1:
 				LedPWM(LCD_RED,LED_PWM_100);
 				LedPWM(LCD_GREEN,DutyCycle);
@@ -228,23 +326,23 @@ static void UserApp1SM_Idle(void)
 				break;
 		  default:
 				break;
-      }
-      
-      
-      if((DutyCycle==LED_PWM_100)||(DutyCycle==LED_PWM_0))
-      {
-          u8ColorType++;
-      }
-  }
+	  }
+	  
+	  
+	  if((DutyCycle==LED_PWM_100)||(DutyCycle==LED_PWM_0))
+	  {
+		  u8ColorType++;
+	  }
+	}
 
-  if(!(u32TimeCounter%500))//Converts Numbers to characters
-  {
+	if(!(u32TimeCounter%500))//Converts Numbers to characters
+	{
 	u8TimeMessage[0]=u32TimeCounter/10000;
 	u8TimeMessage[1]=(u32TimeCounter%10000)/1000+'0';
 	u8TimeMessage[2]=(u32TimeCounter%1000)/100+'0';
 	u8TimeMessage[3]=(u32TimeCounter%100)/10+'0';
 	u8TimeMessage[4]=u32TimeCounter%10+'0';
-	
+
 	if(u8TimeMessage[0])
 	{
 		u8TimeMessage[1]=9+'0';
@@ -252,33 +350,36 @@ static void UserApp1SM_Idle(void)
 		u8TimeMessage[3]=9+'0';
 		u8TimeMessage[4]=9+'0';
 	}
-	
+
 	LCDMessage(LINE2_START_ADDR+8,&u8TimeMessage[1]);//show the timecounter on the LCD_LINE2
 	LCDClearChars(LINE2_START_ADDR+12,16);
-  }//end show timecounter
+	}//end show timecounter
 
-  for(u8 i=0;i<16;i++)//Change the state of the LED
-  {
-	
+	for(u8 i=0;i<16;i++)//Change the state of the LED
+	{
+
 	if(u32TimeCounter == aeDemoList[i].u32Time)
 	{
 	  LedPWM(aeDemoList[i].eLED,aeDemoList[i].eCurrentRate);
 	  
 	  if(aeDemoList[i].bOn == TRUE)
 	  {
-	    LCDMessage(LINE1_START_ADDR+au8LCDList[i],"1");
+		LCDMessage(LINE1_START_ADDR+au8LCDList[i],"1");
 	  }
 	  else
 	  {
 		LCDMessage(LINE1_START_ADDR+au8LCDList[i],"0");
 	  }
 	}
+	}
+
+	if(u32TimeCounter == 10000)//End of cycle
+	{
+	u32TimeCounter=0;
+	}
   }
   
-  if(u32TimeCounter == 10000)//End of cycle
-  {
-	u32TimeCounter=0;
-  }
+  if(CommandType == Show_User_List
 }
 
 

@@ -32,6 +32,7 @@ Type Definitions
 	LedRateType   eCurrentRate;
   }LedCommandType;
 
+typedef enum {Show_Demo_List=0,Show_User_List=2,Stop=3,Continue=4,None=5}Command;
 /**********************************************************************************************************************
 Constants / Definitions
 **********************************************************************************************************************/
