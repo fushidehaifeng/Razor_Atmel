@@ -89,14 +89,6 @@ Promises:
 void UserApp1Initialize(void)
 {
   LCDCommand(LCD_CLEAR_CMD);
-  LCDMessage(LINE1_START_ADDR+1,"0");
-  LCDMessage(LINE1_START_ADDR+3,"0");
-  LCDMessage(LINE1_START_ADDR+6,"0");
-  LCDMessage(LINE1_START_ADDR+8,"0");
-  LCDMessage(LINE1_START_ADDR+11,"0");
-  LCDMessage(LINE1_START_ADDR+13,"0");
-  LCDMessage(LINE1_START_ADDR+16,"0");
-  LCDMessage(LINE1_START_ADDR+18,"0");
   LedOff(WHITE);
   LedOff(PURPLE);
   LedOff(BLUE);
@@ -143,61 +135,7 @@ void UserApp1RunActiveState(void)
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
-static bool CheckCMDString(u8* pu8CMDToCheck)
-{
-  u8* pu8Parser;
-  u8  u8StartTime=0;
-  u8  u8EndTime=0;
-  pu8Parser = pu8CMDToCheck;
-  u8 au8ValidLed[]={'w','W','p','P','b','B','g','G','y','Y','o','O','r','R','c','C'};
-  
-  for(u8 i=0;i<sizeof(au8ValidLed);i++)
-  {
-	if(*pu8Parser == au8ValidLed[i])
-	{
-	  pu8Parser++;
-	
-	  if(*pu8Parser == '-')
-	  {
-	    pu8Parser++;
-	  
-	    for( ;*pu8Parser!='-';*pu8Parser++)
-	    {
-		  if(*pu8Parser>='0'&&*pu8Parser<='9')
-	     {
-		   u8StartTime++;
-		
-		   if(u8StartTime>4||!u8StartTime)
-		   {
-		     return FALSE;//starttime too long or no number
-	   	   }
-	     }
-	    }
-	  
-	    pu8Parser++;
-	  
-	    for( ;*pu8Parser!=0x0d;*pu8Parser++)
-	    {
-	  	  if(*pu8Parser>='0'&&*pu8Parser<='9')
-	      {
-		    u8EndTime++;
-		
-		    if(u8EndTime>4||!u8EndTime)
-		    {
-		      return FALSE;//endtime too long or no number
-		    }
-	      }
-	    }
-		return TRUE;
-	  }
-	  else//if first '-' is not exit or other invalid input
-	  {
-	    return FALSE;
-	  }
-	}
-  }
-  return FALSE;//Color number is invalid
-}
+
 
 
 /**********************************************************************************************************************
@@ -208,181 +146,131 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-  static u32 u32TimeCounter=0;
-  static u8  u8TimeMessage[5];
-  static u16 u16Counter=0;
-  static u8 u8ColorType=7;
-  static LedRateType DutyCycle=LED_PWM_0;
-  static LedCommandType aeDemoList[]=  {
-											{WHITE,0,TRUE,LED_PWM_100},
-											{WHITE,0,FALSE,LED_PWM_0},
-											{PURPLE,0,TRUE,LED_PWM_100},
-											{PURPLE,0,FALSE,LED_PWM_0},
-											{BLUE,0,TRUE,LED_PWM_100},
-											{BLUE,0,FALSE,LED_PWM_0},
-											{CYAN,0,TRUE,LED_PWM_100},
-											{CYAN,0,FALSE,LED_PWM_0},
-											{GREEN,3000,TRUE,LED_PWM_100},
-											{GREEN,9000,FALSE,LED_PWM_0},
-											{YELLOW,0,TRUE,LED_PWM_100},
-											{YELLOW,0,FALSE,LED_PWM_0},
-											{ORANGE,0,TRUE,LED_PWM_100},
-											{ORANGE,0,FALSE,LED_PWM_0},
-											{RED,1000,TRUE,LED_PWM_100},
-											{RED,6000,FALSE,LED_PWM_0}
-  										};
-  
-  static u8 au8LCDList[]={1,1,3,3,6,6,8,8,11,11,13,13,16,16,18,18};
-  static u8 au8Command[1];
-  static u8 u8Type=0;
-  static u8 u8InputBuffer[12];
-  static Command CommandType=None;
+    static u8  au8PassWord[6]="111111";//Initialize 
+    static u8  au8InPut[6]="000000";
+    static u8   u8Num=0;
+    static bool bOk=TRUE,bOk1=TRUE,bOk2=FALSE;
+    static u32  u32Counter=0;
+	bool bIsOk=TRUE;
 
-  
-  DebugScanf(au8Command);
-  
-  if(au8Command[0] == '2')
-  {
-	u8Type=2;
-  }
-  
-  if(au8Command[0] == '2')
-  {
-	u8Type=1;
-  }
-  
-  if(WasButtonPressed(BUTTON0)&&u8Type==2)
-  {
-	CommandType=Show_Demo_List;
-	ButtonAcknowledge(BUTTON0);
-  }
-  
-  if(WasButtonPressed(BUTTON1)&&u8Type==2)
-  {
-	CommandType=Show_User_List;
-	ButtonAcknowledge(BUTTON1);
-  }
-  
-  if(WasButtonPressed(BUTTON2)&&u8Type==2)
-  {
-	CommandType=Stop;
-	ButtonAcknowledge(BUTTON2);
-  }
-  
-  if(WasButtonPressed(BUTTON3)&&u8Type==2&&CommandType==Stop)
-  {
-	CommandType=Continue;
-	ButtonAcknowledge(BUTTON3);
-  }
-  
-  if(CommandType == Show_Demo_List)
-  {
-	u32TimeCounter++;
-	u16Counter++;
-  
-	if(u16Counter==100)//every 100ms change the LCD_light
+    if(bOk)//turn on LED_RED just one time
+    {
+        LedOn(RED);
+        bOk=!bOk;//Switch 
+    }
+    
+    if(IsButtonHeld((BUTTON3),1000))//Pressed for a second
+    {
+            bOk1=FALSE;
+            LedBlink(RED,LED_2HZ);
+            LedBlink(GREEN,LED_2HZ); 
+    }
+    
+	if(WasButtonPressed(BUTTON3) && bOk2)
 	{
-	  u16Counter=0;
-	  switch(u8ColorType)
-	  {
-		  case 1:
-				LedPWM(LCD_RED,LED_PWM_100);
-				LedPWM(LCD_GREEN,DutyCycle);
-				LedPWM(LCD_BLUE,LED_PWM_0);
-				DutyCycle++;
-				break;
-		  case 2:
-				LedPWM(LCD_GREEN,LED_PWM_100);
-				LedPWM(LCD_RED,DutyCycle);
-				LedPWM(LCD_BLUE,LED_PWM_0);
-				DutyCycle--;
-				break;
-		  case 3:
-				LedPWM(LCD_RED,LED_PWM_0);
-				LedPWM(LCD_GREEN,LED_PWM_100);
-				LedPWM(LCD_BLUE,DutyCycle);
-				DutyCycle++;
-				break;
-		  case 4:
-				LedPWM(LCD_RED,LED_PWM_0);
-				LedPWM(LCD_BLUE,LED_PWM_100);
-				LedPWM(LCD_GREEN,DutyCycle);
-				DutyCycle--;
-				break;
-		  case 5:
-				LedPWM(LCD_GREEN,LED_PWM_0);
-				LedPWM(LCD_BLUE,LED_PWM_100);
-				LedPWM(LCD_RED,DutyCycle);
-				DutyCycle++;
-				break;
-		  case 6:
-				LedPWM(LCD_GREEN,LED_PWM_0);
-				LedPWM(LCD_RED,LED_PWM_100);
-				LedPWM(LCD_BLUE,DutyCycle);
-				DutyCycle--;
-				break;
-		  case 7:
-				u8ColorType=0;
-				break;
-		  default:
-				break;
-	  }
-	  
-	  
-	  if((DutyCycle==LED_PWM_100)||(DutyCycle==LED_PWM_0))
-	  {
-		  u8ColorType++;
-	  }
+	  ButtonAcknowledge(BUTTON3);
+	  u8Num=0;
+	  bOk2=FALSE;
+	  LedOff(GREEN);
+	  LedOn(RED);
 	}
-
-	if(!(u32TimeCounter%500))//Converts Numbers to characters
-	{
-	u8TimeMessage[0]=u32TimeCounter/10000;
-	u8TimeMessage[1]=(u32TimeCounter%10000)/1000+'0';
-	u8TimeMessage[2]=(u32TimeCounter%1000)/100+'0';
-	u8TimeMessage[3]=(u32TimeCounter%100)/10+'0';
-	u8TimeMessage[4]=u32TimeCounter%10+'0';
-
-	if(u8TimeMessage[0])
-	{
-		u8TimeMessage[1]=9+'0';
-		u8TimeMessage[2]=9+'0';
-		u8TimeMessage[3]=9+'0';
-		u8TimeMessage[4]=9+'0';
-	}
-
-	LCDMessage(LINE2_START_ADDR+8,&u8TimeMessage[1]);//show the timecounter on the LCD_LINE2
-	LCDClearChars(LINE2_START_ADDR+12,16);
-	}//end show timecounter
-
-	for(u8 i=0;i<16;i++)//Change the state of the LED
-	{
-
-	if(u32TimeCounter == aeDemoList[i].u32Time)
-	{
-	  LedPWM(aeDemoList[i].eLED,aeDemoList[i].eCurrentRate);
-	  
-	  if(aeDemoList[i].bOn == TRUE)
-	  {
-		LCDMessage(LINE1_START_ADDR+au8LCDList[i],"1");
-	  }
-	  else
-	  {
-		LCDMessage(LINE1_START_ADDR+au8LCDList[i],"0");
-	  }
-	}
-	}
-
-	if(u32TimeCounter == 10000)//End of cycle
-	{
-	u32TimeCounter=0;
-	}
-  }
-  
-  if(CommandType == Show_User_List
+	
+    if(!bOk1)//chang the password
+    {
+          if(WasButtonPressed(BUTTON0))
+          {
+              au8PassWord[u8Num++]='1';
+              LedOn(WHITE);//the white led makes sure that data has been entered
+              ButtonAcknowledge(BUTTON0);
+          }
+          if(WasButtonPressed(BUTTON1))
+          {
+              au8PassWord[u8Num++]='2';
+              LedOn(WHITE);
+              ButtonAcknowledge(BUTTON1);
+          }
+          if(WasButtonPressed(BUTTON2))
+          {
+              au8PassWord[u8Num++]='3';
+              LedOn(WHITE);
+              ButtonAcknowledge(BUTTON2);
+          }
+		  
+          u32Counter++;
+		  
+		  if(u32Counter == 100)
+		  {
+			LedOff(WHITE);
+			u32Counter=0;
+		  }
+          
+          if(u8Num == 6)//Initialize 
+          {
+            bOk=!bOk;
+            bOk1=!bOk1;
+            LedOff(RED);
+            LedOff(GREEN);
+            u8Num=0;
+          }
+		  
+    }
+    else
+    {    
+            u32Counter++;
+		  
+			if(u32Counter == 100)
+			{
+			LedOff(WHITE);
+			u32Counter=0;
+			}
+            
+            if(WasButtonPressed(BUTTON0))//input your number
+            {
+                au8InPut[u8Num++]='1';
+                ButtonAcknowledge(BUTTON0);
+                LedOn(WHITE);
+            }
+			
+            if(WasButtonPressed(BUTTON1))
+            {
+                au8InPut[u8Num++]='2';
+                ButtonAcknowledge(BUTTON1);
+                LedOn(WHITE);
+            }
+			
+            if(WasButtonPressed(BUTTON2))
+            {
+                au8InPut[u8Num++]='3';
+                ButtonAcknowledge(BUTTON2);
+                LedOn(WHITE);
+            }
+			
+            if(WasButtonPressed(BUTTON3))//compare to the the password
+              {
+                ButtonAcknowledge(BUTTON3);
+                bOk2 = TRUE;
+			
+				for(u8 i=0;i<6;i++)
+				{
+				  if(au8InPut[i]!=au8PassWord[i])
+				  {
+					bIsOk=FALSE;
+					break;
+				  }
+				}
+				
+                if(bIsOk)
+                {
+                  LedBlink(GREEN,LED_2HZ);
+				  LedOff(RED);
+                }
+                else
+                {
+                  LedBlink(RED,LED_2HZ);
+                }
+              }
+    }
 }
-
-
 
 static void UserApp1SM_Error()
 {
