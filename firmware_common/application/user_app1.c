@@ -51,7 +51,7 @@ extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
 
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
-
+extern bool bOk=TRUE;
 
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
@@ -87,7 +87,18 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
- 
+  LedOff(RED);
+  LedOff(WHITE);
+  LedOff(YELLOW);
+  LedOff(CYAN);
+  LedOff(GREEN);
+  LedOff(BLUE);
+  LedOff(PURPLE);
+  LedOff(ORANGE);
+	
+  PWMAudioOff(BUZZER1);
+  LCDCommand(LCD_CLEAR_CMD);
+
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -127,6 +138,96 @@ void UserApp1RunActiveState(void)
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+/*STATE 1*/
+static void UserApp1SM_state1(void)
+{
+    /*enter if just one time*/
+	if(bOk)
+	{
+		DebugPrintf("Entering state 1");
+		DebugLineFeed();
+		PWMAudioOff(BUZZER1);
+		LCDMessage(LINE1_START_ADDR,"STATE 1");
+		LedOff(RED);
+		LedOn(WHITE);
+		LedOff(YELLOW);
+		LedOn(CYAN);
+		LedOff(GREEN);
+		LedOn(BLUE);
+		LedOn(PURPLE);
+		LedOff(ORANGE);
+		LedPWM(LCD_GREEN,LED_PWM_0);
+		LedPWM(LCD_BLUE,LED_PWM_100);
+		LedPWM(LCD_RED,LED_PWM_100);
+		bOk=FALSE;
+	}
+
+	
+	/*if BUTTON2 pressed , switch to state 2 */	
+  	if(WasButtonPressed(BUTTON2))
+	{
+		ButtonAcknowledge(BUTTON2);
+		UserApp1_StateMachine=UserApp1SM_state2;	
+		bOk=TRUE;
+	}
+}
+
+
+/*STATE 2*/
+static void UserApp1SM_state2(void)
+{
+  static u32 u32Time=0;
+  
+  u32Time++;
+  
+  /*enter if just one time*/
+	if(bOk)
+	{
+		DebugPrintf("Entering state 2");
+		DebugLineFeed();
+		PWMAudioSetFrequency(BUZZER1,200);
+		PWMAudioOn(BUZZER1);
+		LCDMessage(LINE1_START_ADDR,"STATE 2");
+		LedOff(RED);
+		LedOff(WHITE);
+		LedOff(YELLOW);
+		LedOff(CYAN);
+		LedOff(GREEN);
+		LedOff(BLUE);
+		LedOff(PURPLE);
+		LedOff(ORANGE);
+		LedBlink(GREEN,LED_1HZ);
+		LedBlink(YELLOW,LED_2HZ);
+		LedBlink(ORANGE,LED_4HZ);
+		LedBlink(RED,LED_8HZ);
+		LedPWM(LCD_BLUE,LED_PWM_0);
+		LedPWM(LCD_GREEN,LED_PWM_25);
+		LedPWM(LCD_RED,LED_PWM_100);
+		bOk=FALSE;
+	}
+  
+	/*BUZZER off at 100ms*/
+	if(u32Time == 100)
+	{
+		PWMAudioOff(BUZZER1);
+	}
+
+	/*reset the time*/
+	if(u32Time == 1000)
+	{
+		u32Time = 0;
+		PWMAudioOn(BUZZER1);
+	}
+
+	/*if BUTTON1 pressed , switch to state 1 */
+  	if(WasButtonPressed(BUTTON1))
+	{
+		ButtonAcknowledge(BUTTON1);
+		UserApp1_StateMachine=UserApp1SM_state1;	
+		bOk=TRUE;
+	}
+  
+}
 
 /**********************************************************************************************************************
 State Machine Function Definitions
@@ -136,7 +237,33 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
+	static u8 u8FlagState=0;
 
+	if(WasButtonPressed(BUTTON1))
+	{
+		ButtonAcknowledge(BUTTON1);
+		u8FlagState=1;	
+		bOk=TRUE;
+	}
+
+	if(WasButtonPressed(BUTTON2))
+	{
+		ButtonAcknowledge(BUTTON2);
+		u8FlagState=2;
+		bOk=TRUE;
+	}
+
+	/*if button1 is pressed ,then go to state1*/
+	if(u8FlagState == 1)
+	{
+		UserApp1_StateMachine=UserApp1SM_state1;
+	}
+
+	/*if button2 is pressed ,then go to state2*/
+	if(u8FlagState == 2)
+	{
+		UserApp1_StateMachine=UserApp1SM_state2;
+	}
 } /* end UserApp1SM_Idle() */
     
 
