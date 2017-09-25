@@ -36,7 +36,7 @@ contraints but must complete execution regardless of success or failure of start
 
 2. Super loop which runs infinitely giving processor time to each application.  The total loop time should not exceed
 1ms of execution time counting all application execution.  SystemSleep() will execute to complete the remaining time in
-the 1ms period.
+the 1ms period.AntExtendedDataType CHANNEL_TYPE_MASTER
 ***********************************************************************************************************************/
 
 void main(void)

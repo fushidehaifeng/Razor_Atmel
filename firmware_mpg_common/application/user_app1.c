@@ -242,15 +242,7 @@ static void UserApp1SM_Idle(void)
 
 #ifdef EIE1
       LCDMessage(LINE2_START_ADDR, au8DataContent);
-#endif /* EIE1 */
       
-#ifdef MPG2
-#endif /* MPG2 */
-      
-    }
-    else if(G_eAntApiCurrentMessageClass == ANT_TICK)
-    {
-     /* Update and queue the new message data */
       au8TestMessage[7]++;
       if(au8TestMessage[7] == 0)
       {
@@ -261,6 +253,16 @@ static void UserApp1SM_Idle(void)
         }
       }
       AntQueueBroadcastMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
+#endif /* EIE1 */
+
+#ifdef MPG2
+#endif /* MPG2 */
+
+    }
+    else if(G_eAntApiCurrentMessageClass == ANT_TICK)
+    {
+     /* Update and queue the new message data */
+
     }
   } /* end AntReadData() */
   
@@ -269,7 +271,7 @@ static void UserApp1SM_Idle(void)
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error (for now, do nothing) */
-static void UserApp1SM_Error(void)          
+static void UserApp1SM_Error(void)
 {
   
 } /* end UserApp1SM_Error() */

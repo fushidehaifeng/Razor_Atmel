@@ -135,7 +135,7 @@ typedef struct
   u32 u32TimeStamp;                        /* Current G_u32SystemTime1s */
   u8 au8MessageData[MESG_MAX_SIZE];        /* Array for message data */
   void *psNextMessage;                     /* Pointer to AntDataMessageStructType */
-} AntOutgoingMessageListType;   
+} AntOutgoingMessageListType;
 
 
 /*******************************************************************************
