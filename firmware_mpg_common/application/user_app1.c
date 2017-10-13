@@ -96,8 +96,8 @@ Promises:
 void UserApp1Initialize(void)
 {
   u8 au8WelcomeMessage[] = "ANT Master";
-
   /* Write a weclome message on the LCD */
+  
 #if EIE1
   /* Set a message up on the LCD. Delay is required to let the clear command send. */
   LCDCommand(LCD_CLEAR_CMD);
@@ -198,35 +198,11 @@ static void UserApp1SM_AntChannelAssign()
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-  static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
+  static u8 au8TestMessage[] = {0x5B, 0, 0, 0, 0xFF, 0, 0, 0};
+  static u8 au8MessageMissed[6]={0x30,0x30,0x30,0x30,0x30,0x30};
+  static u8 au8MessageSend[6]={0x30,0x30,0x30,0x30,0x30,0x30};
+  
   u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
-  
-  /* Check all the buttons and update au8TestMessage according to the button state */ 
-  au8TestMessage[0] = 0x00;
-  if( IsButtonPressed(BUTTON0) )
-  {
-    au8TestMessage[0] = 0xff;
-  }
-  
-  au8TestMessage[1] = 0x00;
-  if( IsButtonPressed(BUTTON1) )
-  {
-    au8TestMessage[1] = 0xff;
-  }
-
-#ifdef EIE1
-  au8TestMessage[2] = 0x00;
-  if( IsButtonPressed(BUTTON2) )
-  {
-    au8TestMessage[2] = 0xff;
-  }
-
-  au8TestMessage[3] = 0x00;
-  if( IsButtonPressed(BUTTON3) )
-  {
-    au8TestMessage[3] = 0xff;
-  }
-#endif /* EIE1 */
   
   if( AntReadAppMessageBuffer() )
   {
@@ -245,22 +221,53 @@ static void UserApp1SM_Idle(void)
 #endif /* EIE1 */
       
 #ifdef MPG2
-#endif /* MPG2 */
+#endif /* MPG2 EVENT_TRANSFER_TX_COMPLETED */
       
     }
     else if(G_eAntApiCurrentMessageClass == ANT_TICK)
     {
-     /* Update and queue the new message data */
-      au8TestMessage[7]++;
-      if(au8TestMessage[7] == 0)
+      if(G_au8AntApiCurrentMessageBytes[ANT_TICK_MSG_EVENT_CODE_INDEX] == EVENT_TRANSFER_TX_COMPLETED)
       {
-        au8TestMessage[6]++;
-        if(au8TestMessage[6] == 0)
+        au8TestMessage[7]++;
+        if(au8TestMessage[7] == 0)
         {
-          au8TestMessage[5]++;
+          au8TestMessage[6]++;
+          if(au8TestMessage[6] == 0)
+          {
+            au8TestMessage[5]++;
+          }
+        }
+        
+        for(u8 i = 0; i < 3; i++)
+        {
+          au8MessageSend[2 * i]     = HexToASCIICharUpper(au8TestMessage[5 + i] / 16);
+          au8MessageSend[2 * i + 1] = HexToASCIICharUpper(au8TestMessage[5 + i] % 16);
         }
       }
-      AntQueueBroadcastMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
+      
+      if(G_au8AntApiCurrentMessageBytes[ANT_TICK_MSG_EVENT_CODE_INDEX] == EVENT_TRANSFER_TX_FAILED)
+      {
+        au8TestMessage[3]++;
+        if(au8TestMessage[3] == 0)
+        {
+          au8TestMessage[2]++;
+          if(au8TestMessage[2] == 0)
+          {
+            au8TestMessage[1]++;
+          }
+        }
+        
+        for(u8 i = 0; i < 3; i++)
+        {
+          au8MessageMissed[2 * i]     = HexToASCIICharUpper(au8TestMessage[1 + i] / 16);
+          au8MessageMissed[2 * i + 1] = HexToASCIICharUpper(au8TestMessage[1 + i] % 16);
+        }
+      }
+      
+      AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
+      LCDCommand(LCD_CLEAR_CMD);
+      LCDMessage(LINE1_START_ADDR, au8MessageSend);
+      LCDMessage(LINE2_START_ADDR, au8MessageMissed);
     }
   } /* end AntReadData() */
   

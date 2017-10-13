@@ -1489,7 +1489,7 @@ static void AntTickExtended(u8* pu8AntMessage_)
 /*-----------------------------------------------------------------------------/
 Function: AntQueueExtendedApplicationMessage
 
-Description:
+Description:EVENT_TRANSFER_TX_COMPLETED
 Creates a new ANT data message structure and adds it to G_sAntApplicationMsgList.
 The Application list used to communicate message information between the ANT driver and
 the ANT_API simplified interface task.
