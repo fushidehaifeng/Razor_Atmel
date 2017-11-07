@@ -31,8 +31,8 @@ Constants / Definitions
 /* Required constants for ANT channel configuration */
 #define ANT_CHANNEL_TYPE_USERAPP_MASTER CHANNEL_TYPE_MASTER   // Device is a MASTER
 #define ANT_CHANNEL_TYPE_USERAPP_SLAVE  CHANNEL_TYPE_SLAVE    // Device is a SLAVE
-#define ANT_CHANNEL_USERAPP_MASTER             ANT_CHANNEL_0         // Channel 0 - 7
-#define ANT_CHANNEL_USERAPP_SLAVER             ANT_CHANNEL_1         // Channel 0 - 7
+#define ANT_CHANNEL_USERAPP_MASTER       ANT_CHANNEL_0         // Channel 0 - 7
+#define ANT_CHANNEL_USERAPP_SLAVER       ANT_CHANNEL_1         // Channel 0 - 7
 #define ANT_DEVICEID_LO_USERAPP         (u8)0x34              // Low byte of two-byte Device #
 #define ANT_DEVICEID_HI_USERAPP         (u8)0x12              // High byte of two-byte Device #
 #define ANT_DEVICE_TYPE_USERAPP         (u8)1                 // 1 - 255

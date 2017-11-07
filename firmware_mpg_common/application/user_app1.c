@@ -106,7 +106,7 @@ void UserApp1Initialize(void)
   PWMAudioOff(BUZZER1);
   LCDCommand(LCD_CLEAR_CMD);
   LCDMessage(LINE1_START_ADDR,"Hide and Go Seek!");
-  LCDMessage(LINE2_START_ADDR,"Press B1 to choose your status");
+  LCDMessage(LINE2_START_ADDR,"Press B1 to switch");
   
   if(1)
   {
@@ -343,7 +343,7 @@ static void UserApp1SM_Idle_Slave(void)
       case 7000 :   LCDMessage(LINE2_START_ADDR,"3  s");  break;
       case 8000 :   LCDMessage(LINE2_START_ADDR,"2  s");  break;
       case 9000 :   LCDMessage(LINE2_START_ADDR,"1  s");  break;
-      case 10000:   LCDMessage(LINE2_START_ADDR,"START!");  break;
+      case 10000:   LCDMessage(LINE2_START_ADDR,"HERE I COME!");  break;
       default   :   break;
     }
     
