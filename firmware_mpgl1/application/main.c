@@ -35,11 +35,11 @@ Main has two sections:
 contraints but must complete execution regardless of success or failure of starting the application. 
 
 2. Super loop which runs infinitely giving processor time to each application.  The total loop time should not exceed
-1ms of execution time counting all application execution.  SystemSleep() will execute to complete the remaining time in
+1ms of execution time counting all application execution.  SystemSleep() will exsecute to complete the remaining time in
 the 1ms period.
 ***********************************************************************************************************************/
 
-void main(void)
+ void main(void)
 {
   G_u32SystemFlags |= _SYSTEM_INITIALIZING;
 
