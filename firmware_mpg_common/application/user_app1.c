@@ -144,37 +144,6 @@ void UserApp1RunActiveState(void)
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
-static void UserApp1SM_AntChange()
-{
-  static bool bOk=FALSE;
-  
-  if( WasButtonPressed(BUTTON1) )
-  {
-    LCDCommand(LCD_CLEAR_CMD);
-    ButtonAcknowledge(BUTTON1);
-    bStatus=!bStatus;
-    bOk=TRUE;
-  }
-  
-  if( bStatus&&bOk )
-  {
-    LCDMessage(LINE1_START_ADDR,"YOU ARE HIDE!");
-    LCDMessage(LINE2_START_ADDR,"Press BO to start");
-    bOk=FALSE;
-  }
-  else if( bOk )
-  {
-    LCDMessage(LINE1_START_ADDR,"YOU ARE FIND!");
-    LCDMessage(LINE2_START_ADDR,"Press BO to start");
-    bOk=FALSE;
-  }
-  
-  if( WasButtonPressed(BUTTON0) )
-  {
-    ButtonAcknowledge(BUTTON0);
-  }
-  
-}
 
 static void UserApp1SM_AntChoose()
 {
@@ -188,7 +157,9 @@ static void UserApp1SM_AntChoose()
     bOk=TRUE;
   }
   
-  if( bStatus&&bOk )
+  /**use bStatus to distinguish slave and hide**/
+  /**use bOk     to know if BUTTON1 is Pressed**/
+  if( bStatus && bOk )
   {
     LCDMessage(LINE1_START_ADDR,"YOU ARE HIDE!");
     LCDMessage(LINE2_START_ADDR,"Press BO to start");
@@ -246,6 +217,7 @@ static void UserApp1SM_AntChoose()
   {
     ButtonAcknowledge(BUTTON0);
     
+    /**either of the status is configured**/
     if(  (bStatus && AntAssignChannel(&UserApp1_sChannelInfo_MASTER) ) || ( !bStatus && AntAssignChannel(&UserApp1_sChannelInfo_SLAVER) ) )
     {
       UserApp1_StateMachine = UserApp1SM_AntChannelAssign;
@@ -294,6 +266,7 @@ static void UserApp1SM_Idle_Master(void)
      /* New message from ANT task: check what it is */
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
+      /**if get message which begin with "F",means already found**/
       if(G_au8AntApiCurrentMessageBytes[0] == 'F')
       {
         LCDCommand(LCD_CLEAR_CMD);
@@ -304,14 +277,17 @@ static void UserApp1SM_Idle_Master(void)
     }
     else if(G_eAntApiCurrentMessageClass == ANT_TICK)
     {
+      /**Keep Broadcasting**/
       AntQueueBroadcastMessage(ANT_CHANNEL_USERAPP_MASTER, au8TestMessage);
     }
     
+    /**if found and press BUTTON0 at the same time ,go back to UserApp1Initialize**/
     if( bRestart && WasButtonPressed(BUTTON0) )
     {
       ButtonAcknowledge(BUTTON0);
       bRestart = FALSE;
       AntCloseChannelNumber(ANT_CHANNEL_USERAPP_MASTER);
+      AntUnassignChannelNumber(ANT_CHANNEL_USERAPP_MASTER);
       UserApp1_StateMachine = UserApp1Initialize;
     }
   } /* end AntReadData() */
@@ -326,6 +302,7 @@ static void UserApp1SM_Idle_Slave(void)
     static s8 CurrentSignal = 0;
     static u8 au8Restart[30]="PRESS B0 TO RESTART!";
     
+    /**COUNT 10S**/
     if(u32Time <= 10000)
     {
       u32Time++;
@@ -354,9 +331,12 @@ static void UserApp1SM_Idle_Slave(void)
     {
       SignalStrength=-1*G_sAntApiCurrentMessageExtData.s8RSSI;
       
+      /**use RSSI to control the LED and BUZZER1**/
+      /**when time count finished**/
       if(CurrentSignal != (SignalStrength-40)/5 && u32Time >= 10000)
       {
            CurrentSignal = (SignalStrength-40)/5;
+           
           switch(CurrentSignal)
           {
           case 1:
@@ -368,6 +348,7 @@ static void UserApp1SM_Idle_Slave(void)
             LedOn(YELLOW);
             LedOn(ORANGE);
             LedOn(RED);
+            /**in case 1:turn on all LEDs and send a special message to the HIDE**/
             PWMAudioSetFrequency(BUZZER1,400);
             AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP_SLAVER,au8Feedback);
             LCDCommand(LCD_CLEAR_CMD);
@@ -457,22 +438,28 @@ static void UserApp1SM_Idle_Slave(void)
           }/*end of switch*/
       }/*end of if*/
 
+      /**Press BUTTON3 to close the BUZZER1**/
       if( WasButtonPressed(BUTTON3) )
       {
         ButtonAcknowledge(BUTTON3);
         PWMAudioOff(BUZZER1);
       }
+      
+      /**Press BUTTON2 to open the BUZZER1**/
       if( WasButtonPressed(BUTTON2) )
       {
         ButtonAcknowledge(BUTTON2);
         PWMAudioOn(BUZZER1);
       }
+      
+      /**if found and press BUTTON0 at the same time ,go back to UserApp1Initialize**/
       if( bRestart && WasButtonPressed(BUTTON0) )
       {
         ButtonAcknowledge(BUTTON0);
         u32Time=0;
         bRestart = FALSE;
         AntCloseChannelNumber(ANT_CHANNEL_USERAPP_SLAVER);
+        AntUnassignChannelNumber(ANT_CHANNEL_USERAPP_MASTER);
         UserApp1_StateMachine = UserApp1Initialize;
       }
     } /* end if(G_eAntApiCurrentMessageClass == ANT_DATA) */
